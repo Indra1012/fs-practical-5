@@ -1,26 +1,46 @@
-const { v4: uuidv4 } = require("uuid");
+const Product = require("../models/Product");
 
-let products = [];
-
-exports.getProducts = (req, res) => {
-  res.json(products);
+exports.getProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.createProduct = (req, res) => {
-  const newProduct = { id: uuidv4(), ...req.body };
-  products.push(newProduct);
-  res.status(201).json(newProduct);
+exports.createProduct = async (req, res, next) => {
+  try {
+    const product = new Product(req.body);
+    await product.save();
+    res.status(201).json(product);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.updateProduct = (req, res) => {
-  const product = products.find(p => p.id === req.params.id);
-  if (!product) return res.status(404).json({ message: "Product not found" });
+exports.updateProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
-  Object.assign(product, req.body);
-  res.json(product);
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
+
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.deleteProduct = (req, res) => {
-  products = products.filter(p => p.id !== req.params.id);
-  res.json({ message: "Product deleted" });
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "Product deleted" });
+  } catch (err) {
+    next(err);
+  }
 };
